@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.List;
 
@@ -19,15 +20,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Unit tests for BookController.
+ * Uses MockMvc to test HTTP layer without starting a full server.
+ * BookService is mocked to isolate controller behavior.
+ */
 @WebMvcTest(BookController.class)
 class BookControllerTests {
+
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
     private BookService bookService;
 
-
+    /**
+     * Verifies that GET /books returns a list of books with HTTP 200.
+     */
     @Test
     void getAllBooks_returnsBooks() throws Exception {
         List<Book> books = List.of(
@@ -41,7 +50,9 @@ class BookControllerTests {
                 .andExpect(jsonPath("$[1].title").value("Effective Java"));
     }
 
-
+    /**
+     * Verifies that POST /books/{id} returns the saved book with HTTP 201.
+     */
     @Test
     void addBookFromGoogle_returns201() throws Exception {
         Book book = new Book("id1", "Clean Code", "Robert Martin", 431);
@@ -52,6 +63,9 @@ class BookControllerTests {
                 .andExpect(jsonPath("$.author").value("Robert Martin"));
     }
 
+    /**
+     * Verifies that HTTP 404 is returned when the book is not found in Google Books API.
+     */
     @Test
     void addBookFromGoogle_returns404WhenNotFound() throws Exception {
         when(bookService.addBookFromGoogle("invalidId"))
@@ -61,6 +75,9 @@ class BookControllerTests {
                 .andExpect(status().isNotFound());
     }
 
+    /**
+     * Verifies that HTTP 409 is returned when the book already exists in the database.
+     */
     @Test
     void addBookFromGoogle_returns409WhenDuplicate() throws Exception {
         when(bookService.addBookFromGoogle("id1"))
@@ -69,6 +86,9 @@ class BookControllerTests {
                 .andExpect(status().isConflict());
     }
 
+    /**
+     * Verifies that HTTP 400 is returned when the book data is invalid (missing title or authors).
+     */
     @Test
     void addBookFromGoogle_returns400WhenInvalidData() throws Exception {
         when(bookService.addBookFromGoogle("id1"))
@@ -77,6 +97,9 @@ class BookControllerTests {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * Verifies that HTTP 401 is returned when the Google Books API key is invalid.
+     */
     @Test
     void addBookFromGoogle_returns401WhenUnauthorized() throws Exception {
         when(bookService.addBookFromGoogle("id1"))
@@ -86,6 +109,9 @@ class BookControllerTests {
                 .andExpect(status().isUnauthorized());
     }
 
+    /**
+     * Verifies that HTTP 403 is returned when access to Google Books API is forbidden.
+     */
     @Test
     void addBookFromGoogle_returns403WhenForbidden() throws Exception {
         when(bookService.addBookFromGoogle("id1"))
@@ -93,5 +119,52 @@ class BookControllerTests {
                         HttpStatus.FORBIDDEN, "Forbidden", null, null, null));
         mockMvc.perform(post("/books/id1"))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Verifies that HTTP 502 is returned when Google Books API returns a 500 server error.
+     */
+    @Test
+    void addBookFromGoogle_returns502WhenGoogleApiIsDown() throws Exception {
+        when(bookService.addBookFromGoogle("id1"))
+                .thenThrow(HttpServerErrorException.create(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", null, null, null));
+        mockMvc.perform(post("/books/id1"))
+                .andExpect(status().isBadGateway());
+    }
+
+    /**
+     * Verifies that HTTP 503 is returned when Google Books API is unavailable.
+     */
+    @Test
+    void addBookFromGoogle_returns503WhenServiceUnavailable() throws Exception {
+        when(bookService.addBookFromGoogle("id1"))
+                .thenThrow(HttpServerErrorException.create(
+                        HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", null, null, null));
+        mockMvc.perform(post("/books/id1"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    /**
+     * Verifies that HTTP 504 is returned when Google Books API request times out.
+     */
+    @Test
+    void addBookFromGoogle_returns504WhenGatewayTimeout() throws Exception {
+        when(bookService.addBookFromGoogle("id1"))
+                .thenThrow(HttpServerErrorException.create(
+                        HttpStatus.GATEWAY_TIMEOUT, "Gateway Timeout", null, null, null));
+        mockMvc.perform(post("/books/id1"))
+                .andExpect(status().isGatewayTimeout());
+    }
+
+    /**
+     * Verifies that HTTP 500 is returned when an unexpected error occurs.
+     */
+    @Test
+    void addBookFromGoogle_returns500WhenUnexpectedError() throws Exception {
+        when(bookService.addBookFromGoogle("id1"))
+                .thenThrow(new RuntimeException("Unexpected error"));
+        mockMvc.perform(post("/books/id1"))
+                .andExpect(status().isInternalServerError());
     }
 }
