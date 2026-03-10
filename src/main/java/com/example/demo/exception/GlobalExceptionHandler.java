@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Global exception handler for the application.
@@ -17,6 +18,18 @@ import org.springframework.web.client.HttpServerErrorException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    /**
+     * Handles requests to non-existent endpoints.
+     *
+     * @param ex the NoResourceFoundException thrown
+     * @return HTTP 404 with error details
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
+        log.error("Endpoint not found: {}", ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, "Endpoint not found: " + ex.getResourcePath());
+    }
 
     /**
      * Handles validation errors from invalid input arguments.
@@ -75,7 +88,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpClientErrorException.BadRequest.class)
     public ResponseEntity<ErrorResponse> handleHttpClientBadRequest(HttpClientErrorException ex) {
         log.error("Bad Request - Client error: {} - {}", ex.getStatusCode(), ex.getMessage());
-        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid input: " + ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid Google Books API key. Please check your API key.");
     }
 
     /**
@@ -148,7 +161,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + ex.getMessage());
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again later.");
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message) {

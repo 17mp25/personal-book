@@ -167,4 +167,13 @@ class BookControllerTests {
         mockMvc.perform(post("/books/id1"))
                 .andExpect(status().isInternalServerError());
     }
+
+    /**
+     * Verifies that HTTP 404 is returned when a non-existent endpoint is called.
+     */
+    @Test
+    void addBookFromGoogle_returns404WhenEndpointNotFound() throws Exception {
+        mockMvc.perform(post("/book/id1"))
+                .andExpect(status().isNotFound());
+    }
 }

@@ -167,4 +167,85 @@ class BookIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
     }
+
+    /** Enqueues a 403 Forbidden response from the mock server. */
+    private void enqueue403() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(403)
+                .addHeader("Content-Type", "application/json")
+                .setBody("{\"error\": {\"code\": 403, \"message\": \"Forbidden\"}}"));
+    }
+
+    /** Enqueues a 500 Internal Server Error response from the mock server. */
+    private void enqueue500() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(500)
+                .addHeader("Content-Type", "application/json")
+                .setBody("{\"error\": {\"code\": 500, \"message\": \"Internal Server Error\"}}"));
+    }
+
+    /** Enqueues a 503 Service Unavailable response from the mock server. */
+    private void enqueue503() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(503)
+                .addHeader("Content-Type", "application/json")
+                .setBody("{\"error\": {\"code\": 503, \"message\": \"Service Unavailable\"}}"));
+    }
+
+    /** Enqueues a 504 Gateway Timeout response from the mock server. */
+    private void enqueue504() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(504)
+                .addHeader("Content-Type", "application/json")
+                .setBody("{\"error\": {\"code\": 504, \"message\": \"Gateway Timeout\"}}"));
+    }
+
+    /**
+     * Verifies that a forbidden request returns HTTP 403.
+     */
+    @Test
+    void addBook_forbidden_returns403() throws Exception {
+        enqueue403();
+        mockMvc.perform(post("/books/ka2VUBqHiWkC"))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Verifies that a Google API server error returns HTTP 502.
+     */
+    @Test
+    void addBook_serverError_returns502() throws Exception {
+        enqueue500();
+        mockMvc.perform(post("/books/ka2VUBqHiWkC"))
+                .andExpect(status().isBadGateway());
+    }
+
+    /**
+     * Verifies that a service unavailable error returns HTTP 503.
+     */
+    @Test
+    void addBook_serviceUnavailable_returns503() throws Exception {
+        enqueue503();
+        mockMvc.perform(post("/books/ka2VUBqHiWkC"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    /**
+     * Verifies that a gateway timeout returns HTTP 504.
+     */
+    @Test
+    void addBook_gatewayTimeout_returns504() throws Exception {
+        enqueue504();
+        mockMvc.perform(post("/books/ka2VUBqHiWkC"))
+                .andExpect(status().isGatewayTimeout());
+    }
+
+    /**
+     * Verifies that a wrong endpoint returns HTTP 404.
+     */
+    @Test
+    void addBook_wrongEndpoint_returns404() throws Exception {
+        mockMvc.perform(post("/book/ka2VUBqHiWkC"))
+                .andExpect(status().isNotFound());
+    }
 }
