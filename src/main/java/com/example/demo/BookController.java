@@ -1,33 +1,58 @@
 package com.example.demo;
 
 import com.example.demo.db.Book;
-import com.example.demo.db.BookRepository;
+import com.example.demo.repository.BookRepository;
 import com.example.demo.google.GoogleBook;
 import com.example.demo.google.GoogleBookService;
+import com.example.demo.service.BookService;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import java.util.List;
 
 @RestController
+@Slf4j
+@FieldDefaults(
+        makeFinal = true,
+        level = lombok.AccessLevel.PRIVATE
+)
+@RequiredArgsConstructor
 public class BookController {
-    private final BookRepository bookRepository;
-    private final GoogleBookService googleBookService;
 
-    @Autowired
-    public BookController(BookRepository bookRepository, GoogleBookService googleBookService) {
-        this.bookRepository = bookRepository;
-        this.googleBookService = googleBookService;
-    }
+    BookService bookService;
 
     @GetMapping("/books")
     public List<Book> getAllBooks() {
-        return bookRepository.findAll();
+        log.info("getAllBooks - Fetching all books from the database");
+        return bookService.getAllBooks();
     }
 
     @GetMapping("/google")
     public GoogleBook searchGoogleBooks(@RequestParam("q") String query,
-                                        @RequestParam(value = "maxResults", required = false) Integer maxResults,
-                                        @RequestParam(value = "startIndex", required = false) Integer startIndex) {
-        return googleBookService.searchBooks(query, maxResults, startIndex);
+                                        @RequestParam(
+                                                value = "maxResults",
+                                                required = false
+                                        ) Integer maxResults,
+                                        @RequestParam(
+                                                value = "startIndex",
+                                                required = false
+                                        ) Integer startIndex)
+    {
+        log.info("Get searchGoogleBooks - Searching for books on Google Books API with query: {}, maxResults: {}, " +
+                "startIndex: {}", query, maxResults, startIndex);
+        return bookService.searchGoogleBooks(query, maxResults, startIndex);
+    }
+
+    @PostMapping("/books/{googleBookId}")
+    public ResponseEntity<Book> addBookFromGoogle(@PathVariable String googleBookId) {
+        log.info("addBookFromGoogle - Adding book from Google Books API with id: {}", googleBookId);
+        Book book = bookService.addBookFrromGoogle(googleBookId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(book);
     }
 }
