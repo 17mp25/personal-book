@@ -6,6 +6,7 @@ import com.example.demo.google.GoogleBook;
 import com.example.demo.google.GoogleBookService;
 import com.example.demo.mapper.BookMapper;
 import com.example.demo.repository.BookRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,8 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public Book addBookFrromGoogle(String googleBookId) {
+    @Transactional
+    public Book addBookFromGoogle(String googleBookId) {
         log.info("Adding book from Google Books API with id: {}", googleBookId);
 
         if (bookRepository.existsById(googleBookId)) {

@@ -1,18 +1,14 @@
 package com.example.demo;
 
 import com.example.demo.db.Book;
-import com.example.demo.repository.BookRepository;
 import com.example.demo.google.GoogleBook;
-import com.example.demo.google.GoogleBookService;
 import com.example.demo.service.BookService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -52,7 +48,7 @@ public class BookController {
     @PostMapping("/books/{googleBookId}")
     public ResponseEntity<Book> addBookFromGoogle(@PathVariable String googleBookId) {
         log.info("addBookFromGoogle - Adding book from Google Books API with id: {}", googleBookId);
-        Book book = bookService.addBookFrromGoogle(googleBookId);
+        Book book = bookService.addBookFromGoogle(googleBookId);
         return ResponseEntity.status(HttpStatus.CREATED).body(book);
     }
 }

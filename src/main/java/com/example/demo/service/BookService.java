@@ -10,5 +10,5 @@ public interface BookService {
 
     GoogleBook searchGoogleBooks(String query, Integer maxResults, Integer startIndex);
 
-    Book addBookFrromGoogle(String googleBookId);
+    Book addBookFromGoogle(String googleBookId);
 }
