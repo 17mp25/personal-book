@@ -176,4 +176,30 @@ class BookControllerTests {
         mockMvc.perform(post("/book/id1"))
                 .andExpect(status().isNotFound());
     }
+
+    /**
+     * Verifies that HTTP 400 is returned when googleBookId is blank.
+     */
+    @Test
+    void addBookFromGoogle_returns400WhenBookIdIsBlank() throws Exception {
+        mockMvc.perform(post("/books/ "))
+                .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * Verifies that concurrent duplicate inserts return HTTP 409.
+     */
+    @Test
+    void addBookFromGoogle_returns409OnConcurrentDuplicateInsert() throws Exception {
+        Book book = new Book("id1", "Clean Code", "Robert Martin", 431);
+        when(bookService.addBookFromGoogle("id1"))
+                .thenReturn(book)
+                .thenThrow(new BookAlreadyExistsException("Book already exists"));
+
+        mockMvc.perform(post("/books/id1"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/books/id1"))
+                .andExpect(status().isConflict());
+    }
 }

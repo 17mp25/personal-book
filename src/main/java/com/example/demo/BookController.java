@@ -3,11 +3,13 @@ package com.example.demo;
 import com.example.demo.db.Book;
 import com.example.demo.google.GoogleBook;
 import com.example.demo.service.BookService;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.List;
  */
 @RestController
 @Slf4j
+@Validated
 @FieldDefaults(
         makeFinal = true,
         level = lombok.AccessLevel.PRIVATE
@@ -50,15 +53,10 @@ public class BookController {
      * @return GoogleBook response containing matching book items
      */
     @GetMapping("/google")
-    public GoogleBook searchGoogleBooks(@RequestParam("q") String query,
-                                        @RequestParam(
-                                                value = "maxResults",
-                                                required = false
-                                        ) Integer maxResults,
-                                        @RequestParam(
-                                                value = "startIndex",
-                                                required = false
-                                        ) Integer startIndex) {
+    public GoogleBook searchGoogleBooks(
+            @RequestParam("q") @NotBlank(message = "Search query cannot be blank") String query,
+            @RequestParam(value = "maxResults", required = false) Integer maxResults,
+            @RequestParam(value = "startIndex", required = false) Integer startIndex) {
         log.info("Get searchGoogleBooks - Searching for books on Google Books API with query: {}, maxResults: {}, " +
                 "startIndex: {}", query, maxResults, startIndex);
         return bookService.searchGoogleBooks(query, maxResults, startIndex);
@@ -73,7 +71,8 @@ public class BookController {
      * @throws IllegalArgumentException if the book data is invalid
      */
     @PostMapping("/books/{googleBookId}")
-    public ResponseEntity<Book> addBookFromGoogle(@PathVariable String googleBookId) {
+    public ResponseEntity<Book> addBookFromGoogle(
+            @PathVariable @NotBlank(message = "Google Book ID cannot be blank") String googleBookId) {
         log.info("addBookFromGoogle - Adding book from Google Books API with id: {}", googleBookId);
         Book book = bookService.addBookFromGoogle(googleBookId);
         return ResponseEntity.status(HttpStatus.CREATED).body(book);

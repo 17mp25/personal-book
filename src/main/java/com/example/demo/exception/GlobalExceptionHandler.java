@@ -1,5 +1,6 @@
 package com.example.demo.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
         log.error("Endpoint not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, "Endpoint not found: " + ex.getResourcePath());
+    }
+
+    /**
+     * Handles constraint violation exceptions from @Validated annotations.
+     * Triggered when path variables or request params fail validation.
+     *
+     * @param ex the ConstraintViolationException thrown
+     * @return HTTP 400 with error details
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        log.error("Constraint violation: {}", ex.getMessage());
+        String message = ex.getConstraintViolations()
+                .stream()
+                .map(v -> v.getMessage())
+                .findFirst()
+                .orElse("Validation failed");
+        return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
     /**
@@ -111,7 +130,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BookAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleBookAlreadyExists(BookAlreadyExistsException ex) {
-        log.error("Book already exists: {}", ex.getMessage());
+        log.warn("Book already exists: {}", ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 

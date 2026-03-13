@@ -81,20 +81,21 @@ public class BookServiceImpl implements BookService {
 
         GoogleBook.Item item = googleBookService.getBookById(googleBookId);
         if (item == null || item.volumeInfo() == null) {
-            log.error("Book with id {} not found in Google Books API", googleBookId);
+            log.warn("Book with id {} not found in Google Books API", googleBookId);
             throw new IllegalArgumentException("Book with id " + googleBookId + " not found in Google Books API");
         }
 
-        if (item.volumeInfo().authors() == null || item.volumeInfo().authors().isEmpty()) {
-            log.error("Book with id {} does not have an author in Google Books API", googleBookId);
-            throw new IllegalArgumentException(
-                    "Book with id " + googleBookId + " does not have an author in Google Books API");
-        }
-
+        // title checked before authors as per validation priority
         if (item.volumeInfo().title() == null || item.volumeInfo().title().isEmpty()) {
-            log.error("Book with id {} does not have a title in Google Books API", googleBookId);
+            log.warn("Book with id {} does not have a title in Google Books API", googleBookId);
             throw new IllegalArgumentException(
                     "Book with id " + googleBookId + " does not have a title in Google Books API");
+        }
+
+        if (item.volumeInfo().authors() == null || item.volumeInfo().authors().isEmpty()) {
+            log.warn("Book with id {} does not have an author in Google Books API", googleBookId);
+            throw new IllegalArgumentException(
+                    "Book with id " + googleBookId + " does not have an author in Google Books API");
         }
 
         Book book = bookMapper.toBook(item);
